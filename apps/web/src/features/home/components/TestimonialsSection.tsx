@@ -43,14 +43,7 @@ export function TestimonialsSection() {
                 ease: [0.22, 1, 0.36, 1],
               }}
               viewport={{ once: true }}
-              className="
-                group flex h-full flex-col
-                rounded-2xl border border-border/60
-                bg-card/80 backdrop-blur-sm
-                p-6
-                shadow-sm transition-all duration-300
-                hover:-translate-y-1 hover:shadow-xl hover:border-primary/30
-              "
+              className="group flex h-full flex-col rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/30"
             >
               {/* Rating */}
               <StarRating value={t.rating} className="mb-4" />

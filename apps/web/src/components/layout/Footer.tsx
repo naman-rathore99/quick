@@ -16,10 +16,10 @@ export function Footer() {
   return (
     <footer className="border-t border-border/60 bg-muted/30 backdrop-blur-sm">
       <div className={`${layoutContainer} py-12 md:py-16`}>
-        
+
         {/* Top Section */}
         <div className="flex flex-col gap-10 md:flex-row md:justify-between md:gap-12">
-          
+
           {/* Brand */}
           <div className="max-w-xs">
             <Link
@@ -65,14 +65,7 @@ export function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={label}
-                    className="
-                      group flex h-10 w-10 items-center justify-center
-                      rounded-xl border border-border/60
-                      bg-background/80 backdrop-blur-sm
-                      text-muted-foreground
-                      transition-all duration-300
-                      hover:-translate-y-0.5 hover:border-primary/40 hover:text-primary hover:shadow-md
-                    "
+                    className="group flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background/80 backdrop-blur-sm text-muted-foreground transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:text-primary hover:shadow-md"
                   >
                     <Icon className="h-4 w-4 transition-transform group-hover:scale-110" />
                   </Link>
