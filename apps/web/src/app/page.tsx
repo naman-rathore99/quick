@@ -6,7 +6,6 @@ import { WhyChooseUsSection } from "@/features/home/components/WhyChooseUsSectio
 import { TestimonialsSection } from "@/features/home/components/TestimonialsSection";
 import { CtaSection } from "@/features/home/components/CtaSection";
 import { ServicesSection } from "@/features/services/components/ServicesSection";
-import { Footer } from "@/components/layout/Footer";
 
 import { surfacePage } from "@/lib/design-system";
 
