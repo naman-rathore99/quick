@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  CUSTOMER
+  DIDI
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+enum DisputeRaisedBy {
+  CUSTOMER
+  DIDI
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  CLOSED
+}
+
+model User {
+  id                   String    @id @default(cuid())
+  name                 String
+  email                String    @unique
+  password             String?
+  googleId             String?   @unique
+  avatar               String?
+  role                 Role      @default(CUSTOMER)
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+  refreshToken         String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  didiProfile DidiProfile?
+  
+  customerBookings Booking[] @relation("CustomerBookings")
+  didiBookings     Booking[] @relation("DidiBookings")
+
+  customerReviews  Review[]  @relation("CustomerReviews")
+  didiReviews      Review[]  @relation("DidiReviews")
+}
+
+model DidiProfile {
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  user                 User      @relation(fields: [userId], references: [id])
+  bio                  String?
+  servicesOffered      String[]
+  pricePerHour         Float
+  minimumHours         Float
+  areasServed          String[]
+  maxAreaSqft          Int?
+  rating               Float     @default(0)
+  totalReviews         Int       @default(0)
+  isAvailable          Boolean   @default(true)
+  isVerified           Boolean   @default(false)
+}
+
+model Booking {
+  id                   String    @id @default(cuid())
+  customerId           String
+  customer             User      @relation("CustomerBookings", fields: [customerId], references: [id])
+  didiId               String
+  didi                 User      @relation("DidiBookings", fields: [didiId], references: [id])
+  serviceType          String
+  scheduledAt          DateTime
+  estimatedHours       Float
+  propertyAreaSqft     Int?
+  priceAgreed          Float
+  status               BookingStatus @default(PENDING)
+  actualHoursWorked    Float?
+  customerNotes        String?
+  didiNotes            String?
+  completedAt          DateTime?
+  createdAt            DateTime  @default(now())
+
+  review               Review?
+  disputes             Dispute[]
+}
+
+model Review {
+  id                   String    @id @default(cuid())
+  bookingId            String    @unique
+  booking              Booking   @relation(fields: [bookingId], references: [id])
+  customerId           String
+  customer             User      @relation("CustomerReviews", fields: [customerId], references: [id])
+  didiId               String
+  didi                 User      @relation("DidiReviews", fields: [didiId], references: [id])
+  rating               Int
+  comment              String?
+  createdAt            DateTime  @default(now())
+}
+
+model Dispute {
+  id                   String    @id @default(cuid())
+  bookingId            String
+  booking              Booking   @relation(fields: [bookingId], references: [id])
+  raisedBy             DisputeRaisedBy
+  reason               String
+  status               DisputeStatus @default(OPEN)
+  resolution           String?
+  createdAt            DateTime  @default(now())
+}

@@ -14,33 +14,20 @@ const COOKIE_OPTS = {
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
-// Frontend sends the Google ID token after Google Sign-In
 router.post("/google", async (req: Request, res: Response) => {
   const { idToken } = req.body;
-  if (!idToken) {
-    res.status(400).json({ message: "ID token is required" });
-    return;
-  }
+  if (!idToken) { res.status(400).json({ message: "ID token is required" }); return; }
 
   try {
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-
+    const ticket = await client.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
     const payload = ticket.getPayload();
-    if (!payload?.email) {
-      res.status(400).json({ message: "Invalid Google token" });
-      return;
-    }
+    if (!payload?.email) { res.status(400).json({ message: "Invalid Google token" }); return; }
 
     const { sub: googleId, email, name, picture } = payload;
 
-    // Find by googleId or email (link accounts if email matches)
     let user = await User.findOne({ $or: [{ googleId }, { email }] });
 
     if (user) {
-      // Link Google to existing email account if not already linked
       if (!user.googleId) {
         user.googleId = googleId;
         user.avatar = user.avatar || picture;
@@ -57,15 +44,11 @@ router.post("/google", async (req: Request, res: Response) => {
 
     const accessToken = signAccessToken(user.id);
     const refreshToken = signRefreshToken(user.id);
-
     user.refreshToken = refreshToken;
     await user.save();
 
     res.cookie(REFRESH_COOKIE, refreshToken, COOKIE_OPTS);
-    res.json({
-      accessToken,
-      user: { id: user.id, name: user.name, email: user.email, avatar: user.avatar },
-    });
+    res.json({ accessToken, user: { id: user.id, name: user.name, email: user.email, avatar: user.avatar } });
   } catch {
     res.status(401).json({ message: "Failed to verify Google token" });
   }
