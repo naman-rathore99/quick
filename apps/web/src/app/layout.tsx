@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import Navbar from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "../../context/auth-context";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -28,16 +29,18 @@ export default function RootLayout({
       <body
         className={`${poppins.className} flex min-h-full flex-col antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Navbar />
-          <div className="flex flex-1 flex-col">{children}</div>
-          <Footer />
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Navbar />
+            <div className="flex flex-1 flex-col">{children}</div>
+            <Footer />
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );
