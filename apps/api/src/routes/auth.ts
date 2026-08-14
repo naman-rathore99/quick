@@ -19,8 +19,8 @@ function setRefreshCookie(res: Response, token: string) {
   res.cookie(REFRESH_COOKIE, token, COOKIE_OPTS);
 }
 
-function safeUser(user: { id: string; name: string; email: string; avatar?: string }) {
-  return { id: user.id, name: user.name, email: user.email, avatar: user.avatar };
+function safeUser(user: any) {
+  return { id: user.id || user._id?.toString(), name: user.name, email: user.email, avatar: user.avatar };
 }
 
 // ─── Register ──────────────────────────────────────────────────────────────
