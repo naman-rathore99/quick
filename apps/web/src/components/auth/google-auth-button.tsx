@@ -24,38 +24,14 @@ export function GoogleAuthButton({ mode }: Props) {
   const { googleLogin } = useAuth();
   const router = useRouter();
 
-  function handleClick() {
-    if (!window.google) {
-      // Load the GSI script if not already loaded
-      const script = document.createElement("script");
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.onload = initGoogle;
-      document.head.appendChild(script);
-    } else {
-      initGoogle();
-    }
-  }
-
-  function initGoogle() {
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      alert("Google Client ID is missing. Please configure NEXT_PUBLIC_GOOGLE_CLIENT_ID in your .env.local file.");
-      return;
-    }
-
-    window.google?.accounts.id.initialize({
-      client_id: clientId,
-      callback: async (response: { credential: string }) => {
-        try {
-          await googleLogin(response.credential);
-          router.push("/dashboard");
-        } catch (err) {
-          console.error("Google auth failed:", err);
-        }
-      },
+  async function handleClick() {
+    const supabase = (await import("../../../utils/supabase/client")).createClient();
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      }
     });
-    window.google?.accounts.id.prompt();
   }
 
   return (

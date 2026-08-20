@@ -46,21 +46,38 @@ export function Hero() {
             {copy.description}
           </motion.p>
 
-          {/* CTA */}
+          {/* Interactive Booking Widget */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.25 }}
-            className={`mt-10 justify-center flex flex-col sm:flex-row gap-4`}
+            className="mt-10 mx-auto max-w-2xl bg-card rounded-2xl shadow-xl border border-border/60 p-2 flex flex-col sm:flex-row items-center gap-2"
           >
+            <div className="flex-1 w-full flex items-center gap-3 px-4 py-2 border-b sm:border-b-0 sm:border-r border-border/60">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <select className="w-full bg-transparent outline-none text-foreground text-sm font-medium h-10">
+                <option value="">What do you need help with?</option>
+                <option value="cleaning">Home Cleaning</option>
+                <option value="dusting">Dusting & Sweeping</option>
+                <option value="cooking">Cooking</option>
+              </select>
+            </div>
+            
+            <div className="flex-1 w-full flex items-center gap-3 px-4 py-2">
+              <Clock className="h-5 w-5 text-primary" />
+              <select className="w-full bg-transparent outline-none text-foreground text-sm font-medium h-10">
+                <option value="">When?</option>
+                <option value="today">Today</option>
+                <option value="tomorrow">Tomorrow</option>
+                <option value="later">Later this week</option>
+              </select>
+            </div>
+
             <Button
               size="lg"
-              className="min-w-[14rem] h-14 text-lg shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-transform rounded-full"
+              className="w-full sm:w-auto h-12 px-8 text-base shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-transform rounded-xl"
             >
-              {copy.primaryCta}
-            </Button>
-            <Button variant="outline" size="lg" className="min-w-[14rem] h-14 text-lg rounded-full bg-background border-border hover:bg-muted">
-              {copy.secondaryCta}
+              See Providers
             </Button>
           </motion.div>
 
@@ -69,11 +86,11 @@ export function Hero() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.35 }}
-            className="mt-12 flex flex-wrap justify-center gap-4 sm:gap-6"
+            className="mt-8 flex flex-wrap justify-center gap-4 text-sm font-medium text-muted-foreground"
           >
-            <li className="flex items-center gap-2 text-sm font-medium text-foreground bg-background px-4 py-2 rounded-full shadow-sm border border-border/60"><ShieldCheck className="h-5 w-5 text-primary" />{copy.trust[0].label}</li>
-            <li className="flex items-center gap-2 text-sm font-medium text-foreground bg-background px-4 py-2 rounded-full shadow-sm border border-border/60"><Clock className="h-5 w-5 text-primary" />{copy.trust[1].label}</li>
-            <li className="flex items-center gap-2 text-sm font-medium text-foreground bg-background px-4 py-2 rounded-full shadow-sm border border-border/60"><Sparkles className="h-5 w-5 text-primary" />{copy.trust[2].label}</li>
+            <li className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-primary" /> Background Checked</li>
+            <li className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> On-time Guarantee</li>
+            <li className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> Top Rated Didis</li>
           </motion.ul>
 
         </div>
