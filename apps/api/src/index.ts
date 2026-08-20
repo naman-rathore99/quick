@@ -25,7 +25,14 @@ app.use("/bookings", bookingsRoutes);
 app.use("/services", servicesRoutes);
 app.use("/providers", providersRoutes);
 
-app.get("/health", (_, res) => res.json({ ok: true }));
+app.get("/health", (req, res) => {
+  res.json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    env: process.env.NODE_ENV || "development",
+  });
+});
 
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`🚀 API running on http://localhost:${PORT}`));
