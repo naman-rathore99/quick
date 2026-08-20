@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { Menu, Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -13,6 +14,22 @@ import { CartSheet } from "@/features/cart/components/CartSheet";
 import { layoutContainer, navBar, navLink } from "@/lib/design-system";
 
 import { PRIMARY_NAV_LINKS } from "./nav-links";
+
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      aria-label="Toggle theme"
+      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+    >
+      <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+    </Button>
+  );
+}
 
 export default function Navbar() {
   return (
@@ -36,6 +53,7 @@ export default function Navbar() {
         </nav>
 
         <div className="hidden items-center gap-2.5 md:flex">
+          <ThemeToggle />
           <CartSheet />
           <Link href="/login">
             <Button variant="outline" size="default" type="button">
@@ -50,6 +68,7 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle />
           <CartSheet />
           <Sheet>
             <SheetTrigger asChild>

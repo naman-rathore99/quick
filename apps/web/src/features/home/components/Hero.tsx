@@ -55,7 +55,7 @@ export function Hero() {
           >
             <div className="flex-1 w-full flex items-center gap-3 px-4 py-2 border-b sm:border-b-0 sm:border-r border-border/60">
               <Sparkles className="h-5 w-5 text-primary" />
-              <select className="w-full bg-transparent outline-none text-foreground text-sm font-medium h-10">
+              <select className="w-full bg-card outline-none text-foreground text-sm font-medium h-10 [&>option]:bg-card [&>option]:text-foreground">
                 <option value="">What do you need help with?</option>
                 <option value="cleaning">Home Cleaning</option>
                 <option value="dusting">Dusting & Sweeping</option>
@@ -65,7 +65,7 @@ export function Hero() {
             
             <div className="flex-1 w-full flex items-center gap-3 px-4 py-2">
               <Clock className="h-5 w-5 text-primary" />
-              <select className="w-full bg-transparent outline-none text-foreground text-sm font-medium h-10">
+              <select className="w-full bg-card outline-none text-foreground text-sm font-medium h-10 [&>option]:bg-card [&>option]:text-foreground">
                 <option value="">When?</option>
                 <option value="today">Today</option>
                 <option value="tomorrow">Tomorrow</option>
