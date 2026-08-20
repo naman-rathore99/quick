@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingCart } from "lucide-react";
+import { ClipboardList } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -38,10 +38,10 @@ export function CartSheet() {
           variant="outline"
           size="sm"
           className="relative h-10 gap-2 px-3"
-          aria-label={`Cart, ${totals.itemCount} items`}
+          aria-label={`Bookings, ${totals.itemCount} items`}
         >
-          <ShoppingCart className="h-5 w-5" />
-          <span className="hidden sm:inline">Cart</span>
+          <ClipboardList className="h-5 w-5" />
+          <span className="hidden sm:inline">Bookings</span>
 
           {totals.itemCount > 0 && (
             <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">
@@ -59,7 +59,7 @@ export function CartSheet() {
         {/* Header */}
         <SheetHeader className="border-b border-border pb-4">
           <SheetTitle className="text-lg font-semibold tracking-tight">
-            Your cart
+            Your Bookings
           </SheetTitle>
         </SheetHeader>
 

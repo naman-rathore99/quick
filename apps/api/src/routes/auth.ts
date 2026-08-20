@@ -1,8 +1,5 @@
 import { Router, Request, Response } from "express";
-import crypto from "crypto";
-import { User } from "../models/User";
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../lib/jwt";
-import { sendPasswordResetEmail } from "../lib/email";
+import { supabase } from "../lib/db";
 import { requireAuth, AuthRequest } from "../middleware/requireAuth";
 
 const router = Router();
@@ -20,7 +17,12 @@ function setRefreshCookie(res: Response, token: string) {
 }
 
 function safeUser(user: any) {
-  return { id: user.id || user._id?.toString(), name: user.name, email: user.email, avatar: user.avatar };
+  return { 
+    id: user.id, 
+    name: user.user_metadata?.full_name || user.email?.split("@")[0], 
+    email: user.email, 
+    avatar: user.user_metadata?.avatar_url 
+  };
 }
 
 // ─── Register ──────────────────────────────────────────────────────────────
@@ -29,18 +31,19 @@ router.post("/register", async (req: Request, res: Response) => {
   if (!name || !email || !password) { res.status(400).json({ message: "All fields are required" }); return; }
   if (password.length < 8) { res.status(400).json({ message: "Password must be at least 8 characters" }); return; }
 
-  const existing = await User.findOne({ email });
-  if (existing) { res.status(409).json({ message: "Email already in use" }); return; }
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { full_name: name } }
+  });
 
-  const user = await User.create({ name, email, password });
+  if (error || !data.session) {
+    res.status(400).json({ message: error?.message || "Registration failed. (Email may require confirmation)" });
+    return;
+  }
 
-  const accessToken = signAccessToken(user.id);
-  const refreshToken = signRefreshToken(user.id);
-  user.refreshToken = refreshToken;
-  await user.save();
-
-  setRefreshCookie(res, refreshToken);
-  res.status(201).json({ accessToken, user: safeUser(user) });
+  setRefreshCookie(res, data.session.refresh_token);
+  res.status(201).json({ accessToken: data.session.access_token, user: safeUser(data.user) });
 });
 
 // ─── Login ─────────────────────────────────────────────────────────────────
@@ -48,18 +51,14 @@ router.post("/login", async (req: Request, res: Response) => {
   const { email, password } = req.body;
   if (!email || !password) { res.status(400).json({ message: "Email and password are required" }); return; }
 
-  const user = await User.findOne({ email }).select("+password");
-  if (!user || !(await user.comparePassword(password))) {
-    res.status(401).json({ message: "Invalid credentials" }); return;
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  
+  if (error || !data.session) {
+    res.status(401).json({ message: error?.message || "Invalid credentials" }); return;
   }
 
-  const accessToken = signAccessToken(user.id);
-  const refreshToken = signRefreshToken(user.id);
-  user.refreshToken = refreshToken;
-  await user.save();
-
-  setRefreshCookie(res, refreshToken);
-  res.json({ accessToken, user: safeUser(user) });
+  setRefreshCookie(res, data.session.refresh_token);
+  res.json({ accessToken: data.session.access_token, user: safeUser(data.user) });
 });
 
 // ─── Refresh Token ─────────────────────────────────────────────────────────
@@ -67,35 +66,29 @@ router.post("/refresh", async (req: Request, res: Response) => {
   const token = req.cookies?.[REFRESH_COOKIE];
   if (!token) { res.status(401).json({ message: "No refresh token" }); return; }
 
-  try {
-    const payload = verifyRefreshToken(token);
-    const user = await User.findById(payload.sub).select("+refreshToken");
-    if (!user || user.refreshToken !== token) {
-      res.status(401).json({ message: "Invalid refresh token" }); return;
-    }
+  const { data, error } = await supabase.auth.refreshSession({ refresh_token: token });
 
-    const accessToken = signAccessToken(user.id);
-    const newRefresh = signRefreshToken(user.id);
-    user.refreshToken = newRefresh;
-    await user.save();
-
-    setRefreshCookie(res, newRefresh);
-    res.json({ accessToken });
-  } catch {
-    res.status(401).json({ message: "Invalid or expired refresh token" });
+  if (error || !data.session) {
+    res.status(401).json({ message: "Invalid or expired refresh token" }); return;
   }
+
+  setRefreshCookie(res, data.session.refresh_token);
+  res.json({ accessToken: data.session.access_token });
 });
 
 // ─── Me ────────────────────────────────────────────────────────────────────
 router.get("/me", requireAuth, async (req: AuthRequest, res: Response) => {
-  const user = await User.findById(req.userId);
-  if (!user) { res.status(404).json({ message: "User not found" }); return; }
-  res.json(safeUser(user));
+  if (!req.user) { res.status(404).json({ message: "User not found" }); return; }
+  res.json(safeUser(req.user));
 });
 
 // ─── Logout ────────────────────────────────────────────────────────────────
 router.post("/logout", requireAuth, async (req: AuthRequest, res: Response) => {
-  await User.findByIdAndUpdate(req.userId, { refreshToken: undefined });
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    await supabase.auth.admin.signOut(token);
+  }
   res.clearCookie(REFRESH_COOKIE);
   res.json({ message: "Logged out" });
 });
@@ -105,37 +98,35 @@ router.post("/forgot-password", async (req: Request, res: Response) => {
   const { email } = req.body;
   if (!email) { res.status(400).json({ message: "Email is required" }); return; }
 
-  const user = await User.findOne({ email });
-  if (!user) { res.json({ message: "If that email exists, a reset link has been sent" }); return; }
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password`;
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: resetUrl,
+  });
 
-  const token = crypto.randomBytes(32).toString("hex");
-  user.resetPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
-  user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
-  await user.save();
-
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-  await sendPasswordResetEmail(email, resetUrl);
+  if (error) {
+    console.error("Reset password error:", error);
+  }
+  
   res.json({ message: "If that email exists, a reset link has been sent" });
 });
 
 // ─── Reset Password ────────────────────────────────────────────────────────
 router.post("/reset-password", async (req: Request, res: Response) => {
   const { token, password } = req.body;
+  // With Supabase, token reset usually implies we use the pkce flow or have the user logged in directly via a hash in the url.
+  // Since we accept a token and password here, if you have a raw recovery token:
   if (!token || !password) { res.status(400).json({ message: "Token and new password are required" }); return; }
   if (password.length < 8) { res.status(400).json({ message: "Password must be at least 8 characters" }); return; }
 
-  const hashed = crypto.createHash("sha256").update(token).digest("hex");
-  const user = await User.findOne({
-    resetPasswordToken: hashed,
-    resetPasswordExpires: { $gt: new Date() },
-  }).select("+resetPasswordToken +resetPasswordExpires");
+  const { error } = await supabase.auth.verifyOtp({ email: token, token, type: 'recovery' });
+  if(error){
+    res.status(400).json({ message: "Invalid or expired reset token" }); return;
+  }
 
-  if (!user) { res.status(400).json({ message: "Invalid or expired reset token" }); return; }
-
-  user.password = password;
-  user.resetPasswordToken = undefined;
-  user.resetPasswordExpires = undefined;
-  await user.save();
+  const { error: updateError } = await supabase.auth.updateUser({ password });
+  if(updateError){
+    res.status(400).json({ message: updateError.message }); return;
+  }
 
   res.json({ message: "Password reset successfully" });
 });

@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyAccessToken } from "../lib/jwt";
+import { supabase } from "../lib/db";
 
 export interface AuthRequest extends Request {
   userId?: string;
+  user?: any;
 }
 
-export function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
+export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
     res.status(401).json({ message: "Unauthorized" });
@@ -14,10 +15,13 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
 
   const token = authHeader.slice(7);
   try {
-    const payload = verifyAccessToken(token);
-    req.userId = payload.sub;
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) throw error;
+    
+    req.userId = user.id;
+    req.user = user;
     next();
-  } catch {
+  } catch (error) {
     res.status(401).json({ message: "Invalid or expired token" });
   }
 }

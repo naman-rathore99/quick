@@ -5,6 +5,9 @@ import cookieParser from "cookie-parser";
 import { connectDB } from "./lib/db";
 import authRoutes from "./routes/auth";
 import googleRoutes from "./routes/google";
+import bookingsRoutes from "./routes/bookings";
+import servicesRoutes from "./routes/services";
+import providersRoutes from "./routes/providers";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -18,6 +21,9 @@ app.use(cookieParser());
 
 app.use("/auth", authRoutes);
 app.use("/auth", googleRoutes);
+app.use("/bookings", bookingsRoutes);
+app.use("/services", servicesRoutes);
+app.use("/providers", providersRoutes);
 
 app.get("/health", (_, res) => res.json({ ok: true }));
 

@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 import {
-  cardService,
   layoutContainer,
   sectionPadding,
   surfaceMutedBand,
@@ -44,28 +43,28 @@ export function ServicesSection() {
                 viewport={{ once: true, margin: "-40px" }}
                 className="h-full"
               >
-                <Card className={cardService}>
-                  <CardContent className="flex h-full flex-col items-center gap-4 p-6 text-center">
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-muted ring-1 ring-border/60 transition-colors duration-300 group-hover:bg-primary group-hover:ring-primary/20">
-                      <Icon className="h-7 w-7 text-foreground transition-colors duration-300 group-hover:text-primary-foreground" />
+                <Card className="group relative flex flex-col overflow-hidden rounded-3xl border border-border/40 bg-card hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+                  <CardContent className="flex h-full flex-col items-center gap-4 p-8 text-center">
+                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-muted/50 transition-colors duration-300 group-hover:bg-primary/10">
+                      <Icon className="h-8 w-8 text-foreground transition-colors duration-300 group-hover:text-primary" />
                     </div>
 
-                    <h3 className="text-lg font-semibold leading-snug tracking-tight text-foreground">
+                    <h3 className="text-xl font-bold leading-snug tracking-tight text-foreground">
                       {service.name}
                     </h3>
 
-                    <p className="text-sm font-medium tabular-nums text-muted-foreground">
-                      <span className="text-foreground/70">From </span>₹{service.price}
+                    <p className="text-base font-semibold tabular-nums text-primary/80">
+                      <span className="text-muted-foreground font-medium text-sm">Starts at </span>₹{service.price}
                     </p>
 
-                    <div className="mt-auto w-full pt-1">
+                    <div className="mt-auto w-full pt-4">
                       <Button
                         type="button"
-                        size="default"
-                        className="w-full"
+                        size="lg"
+                        className="w-full rounded-xl text-base h-12 shadow-sm transition-all hover:scale-[1.02]"
                         onClick={() => addItem(service.id)}
                       >
-                        Add to cart
+                        Book Service
                       </Button>
                     </div>
                   </CardContent>

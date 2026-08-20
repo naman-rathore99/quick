@@ -38,8 +38,14 @@ export function GoogleAuthButton({ mode }: Props) {
   }
 
   function initGoogle() {
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      alert("Google Client ID is missing. Please configure NEXT_PUBLIC_GOOGLE_CLIENT_ID in your .env.local file.");
+      return;
+    }
+
     window.google?.accounts.id.initialize({
-      client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+      client_id: clientId,
       callback: async (response: { credential: string }) => {
         try {
           await googleLogin(response.credential);

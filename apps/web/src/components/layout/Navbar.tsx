@@ -37,12 +37,16 @@ export default function Navbar() {
 
         <div className="hidden items-center gap-2.5 md:flex">
           <CartSheet />
-          <Button variant="outline" size="default" type="button">
-            Login
-          </Button>
-          <Button size="default" type="button">
-            Book Now
-          </Button>
+          <Link href="/login">
+            <Button variant="outline" size="default" type="button">
+              Login
+            </Button>
+          </Link>
+          <Link href="#services">
+            <Button size="default" type="button">
+              Book Now
+            </Button>
+          </Link>
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
@@ -68,12 +72,16 @@ export default function Navbar() {
               </nav>
 
               <div className="mt-6 flex flex-col gap-2.5 border-t border-border pt-6">
-                <Button variant="outline" type="button" className="w-full">
-                  Login
-                </Button>
-                <Button type="button" className="w-full">
-                  Book Now
-                </Button>
+                <Link href="/login" className="w-full">
+                  <Button variant="outline" type="button" className="w-full">
+                    Login
+                  </Button>
+                </Link>
+                <Link href="#services" className="w-full">
+                  <Button type="button" className="w-full">
+                    Book Now
+                  </Button>
+                </Link>
               </div>
             </SheetContent>
           </Sheet>
