@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { updateSession } from "@/utils/supabase/middleware";
+import { updateSession } from "./utils/supabase/middleware";
 
 // Routes only for guests (redirect to dashboard if logged in)
 const GUEST_ONLY = ["/login", "/signup", "/forgot-password", "/reset-password"];
