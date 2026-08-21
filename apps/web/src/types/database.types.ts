@@ -8,11 +8,12 @@ export interface Database {
       users: {
         Row: {
           id: string; // UUID from auth.users
-          full_name: string;
+          name: string;
           phone: string | null;
-          role: UserRole;
+          role: string;
+          location: string | null;
+          is_verified: boolean;
           created_at: string;
-          updated_at: string;
         };
       };
       providers: {
