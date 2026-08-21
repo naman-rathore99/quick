@@ -1,34 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
-
-// Routes that require authentication
-const PROTECTED = ["/dashboard", "/profile", "/bookings", "/settings"];
+import { updateSession } from "@/utils/supabase/middleware";
 
 // Routes only for guests (redirect to dashboard if logged in)
 const GUEST_ONLY = ["/login", "/signup", "/forgot-password", "/reset-password"];
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Check auth via refresh token cookie (httpOnly — we can only check presence)
-  const hasRefreshToken = req.cookies.has("refreshToken");
+  // Refresh session and get the current logged-in user
+  const { supabase, supabaseResponse, user } = await updateSession(req);
 
-  const isProtected = PROTECTED.some((p) => pathname.startsWith(p));
   const isGuestOnly = GUEST_ONLY.some((p) => pathname.startsWith(p));
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isCustomerRoute = pathname.startsWith("/customer");
+  const isProviderRoute = pathname.startsWith("/provider");
 
-  if (isProtected && !hasRefreshToken) {
+  // 1. Guest Routes Handling
+  if (isGuestOnly && user) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/customer"; // Default redirect
+    return NextResponse.redirect(url);
+  }
+
+  // 2. Protected Routes Handling
+  if ((isAdminRoute || isCustomerRoute || isProviderRoute) && !user) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("from", pathname);
     return NextResponse.redirect(url);
   }
 
-  if (isGuestOnly && hasRefreshToken) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+  // 3. Admin Route Security
+  if (isAdminRoute && user) {
+    // Fetch user role from database
+    const { data: profile } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.role !== "admin") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/"; // Redirect non-admins to homepage
+      return NextResponse.redirect(url);
+    }
   }
 
-  return NextResponse.next();
+  // 4. Provider Route Security (Optional for future)
+  if (isProviderRoute && user) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.role !== "provider" && profile?.role !== "admin") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/partner"; // Redirect to onboarding
+      return NextResponse.redirect(url);
+    }
+  }
+
+  return supabaseResponse;
 }
 
 export const config = {
