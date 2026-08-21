@@ -1,43 +1,92 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CalendarCheck, TrendingUp, IndianRupee } from "lucide-react";
+import { createClient } from "../../../utils/supabase/server";
+import { cookies } from "next/headers";
 
-const stats = [
-  {
-    title: "Total Revenue",
-    value: "₹24,590",
-    change: "+12.5%",
-    trend: "up",
-    icon: IndianRupee,
-  },
-  {
-    title: "Active Bookings",
-    value: "145",
-    change: "+4.2%",
-    trend: "up",
-    icon: CalendarCheck,
-  },
-  {
-    title: "Total Customers",
-    value: "1,240",
-    change: "+18.1%",
-    trend: "up",
-    icon: Users,
-  },
-  {
-    title: "Verified Providers",
-    value: "84",
-    change: "+2.4%",
-    trend: "up",
-    icon: TrendingUp,
-  },
-];
+export const metadata = {
+  title: "Admin Dashboard - QuickDidi",
+};
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  // 1. Fetch Total Revenue
+  const { data: revenueData } = await supabase
+    .from("transactions")
+    .select("amount")
+    .eq("status", "paid");
+  
+  const totalRevenue = (revenueData as { amount: number }[] | null)?.reduce((sum, tx) => sum + (tx.amount || 0), 0) || 0;
+
+  // 2. Fetch Active Bookings (Not completed or cancelled)
+  const { count: activeBookingsCount } = await supabase
+    .from("bookings")
+    .select("*", { count: "exact", head: true })
+    .neq("status", "completed")
+    .neq("status", "cancelled");
+
+  // 3. Fetch Total Customers
+  const { count: totalCustomersCount } = await supabase
+    .from("users")
+    .select("*", { count: "exact", head: true })
+    .eq("role", "customer");
+
+  // 4. Fetch Verified Providers
+  const { count: verifiedProvidersCount } = await supabase
+    .from("providers")
+    .select("*", { count: "exact", head: true })
+    .eq("is_verified", true);
+
+  // 5. Fetch Recent Bookings
+  const { data: recentBookings } = await supabase
+    .from("bookings")
+    .select(`
+      id,
+      status,
+      created_at,
+      services ( name, price ),
+      users ( name )
+    `)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  const stats = [
+    {
+      title: "Total Revenue",
+      value: `₹${totalRevenue.toLocaleString()}`,
+      change: "+0%", // Will be dynamic when we add historical tracking
+      trend: "up",
+      icon: IndianRupee,
+    },
+    {
+      title: "Active Bookings",
+      value: activeBookingsCount || 0,
+      change: "+0%",
+      trend: "up",
+      icon: CalendarCheck,
+    },
+    {
+      title: "Total Customers",
+      value: totalCustomersCount || 0,
+      change: "+0%",
+      trend: "up",
+      icon: Users,
+    },
+    {
+      title: "Verified Providers",
+      value: verifiedProvidersCount || 0,
+      change: "+0%",
+      trend: "up",
+      icon: TrendingUp,
+    },
+  ];
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">Welcome back, Admin. Here's what's happening today.</p>
+        <p className="text-muted-foreground mt-2">Welcome back, Admin. Real-time platform metrics.</p>
       </div>
 
       {/* Stats Grid */}
@@ -65,14 +114,15 @@ export default function AdminDashboardPage() {
         })}
       </div>
 
-      {/* Placeholder for future charts / recent activity */}
+      {/* Charts & Recent Activity */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="rounded-2xl border border-border/40 bg-card shadow-sm lg:col-span-4">
+        <Card className="rounded-2xl border border-border/40 bg-card shadow-sm lg:col-span-4 flex flex-col">
           <CardHeader>
             <CardTitle>Revenue Overview</CardTitle>
           </CardHeader>
-          <CardContent className="flex items-center justify-center h-64 text-muted-foreground border-t border-border/40 bg-muted/20">
-            [Chart Area Placeholder]
+          <CardContent className="flex-1 flex flex-col items-center justify-center min-h-[250px] text-muted-foreground border-t border-border/40 bg-muted/20">
+            <TrendingUp className="h-12 w-12 text-muted-foreground/30 mb-3" />
+            <p>Not enough transaction data to generate chart.</p>
           </CardContent>
         </Card>
         
@@ -82,20 +132,32 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent className="p-0 border-t border-border/40">
             <div className="divide-y divide-border/40">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Bathroom Deep Clean</p>
-                    <p className="text-xs text-muted-foreground">Customer: Naman Rathore</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-foreground">₹499</p>
-                    <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-500">
-                      In Progress
-                    </span>
-                  </div>
+              {!(recentBookings as any[]) || (recentBookings as any[]).length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground text-sm">
+                  No bookings have been made yet.
                 </div>
-              ))}
+              ) : (
+                (recentBookings as any[]).map((booking) => {
+                  // Type casting for joined tables
+                  const service = booking.services as any;
+                  const customer = booking.users as any;
+                  
+                  return (
+                    <div key={booking.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{service?.name || "Unknown Service"}</p>
+                        <p className="text-xs text-muted-foreground">Customer: {customer?.name || "Unknown"}</p>
+                      </div>
+                      <div className="text-right flex flex-col items-end gap-1">
+                        <p className="text-sm font-bold text-foreground">₹{service?.price || 0}</p>
+                        <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-500 uppercase tracking-wider">
+                          {booking.status.replace('_', ' ')}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
             </div>
           </CardContent>
         </Card>
