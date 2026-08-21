@@ -21,12 +21,12 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // Allow any quickdidi domain or localhost
+    if (origin.includes("quickdidi.com") || origin.includes("localhost")) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(null, false); // Return false instead of throwing an Error to prevent 500 crashes
     }
   },
   credentials: true,
