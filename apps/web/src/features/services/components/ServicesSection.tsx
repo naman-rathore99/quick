@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,12 +60,13 @@ export function ServicesSection() {
 
                     <div className="mt-auto w-full pt-4">
                       <Button
-                        type="button"
+                        asChild
                         size="lg"
                         className="w-full rounded-xl text-base h-12 shadow-sm transition-all hover:scale-[1.02]"
-                        onClick={() => addItem(service.id)}
                       >
-                        Book Service
+                        <Link href={`/services/${service.id}`}>
+                          View Services
+                        </Link>
                       </Button>
                     </div>
                   </CardContent>
