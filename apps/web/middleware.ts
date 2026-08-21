@@ -39,7 +39,9 @@ export async function middleware(req: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "admin") {
+    const typedProfile = profile as { role: string } | null;
+
+    if (typedProfile?.role !== "admin") {
       const url = req.nextUrl.clone();
       url.pathname = "/"; // Redirect non-admins to homepage
       return NextResponse.redirect(url);
@@ -54,7 +56,9 @@ export async function middleware(req: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "provider" && profile?.role !== "admin") {
+    const typedProfile = profile as { role: string } | null;
+
+    if (typedProfile?.role !== "provider" && typedProfile?.role !== "admin") {
       const url = req.nextUrl.clone();
       url.pathname = "/partner"; // Redirect to onboarding
       return NextResponse.redirect(url);
