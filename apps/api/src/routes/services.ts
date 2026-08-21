@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { supabase } from "../lib/db";
 
-const router = Router();
+const router: Router = Router();
 
 // ─── Get Global Services ───────────────────────────────────────────────────
 router.get("/", async (req: Request, res: Response) => {

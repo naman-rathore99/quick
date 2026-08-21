@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { supabase } from "../lib/db";
 import { requireAuth, AuthRequest } from "../middleware/requireAuth";
 
-const router = Router();
+const router: Router = Router();
 
 const REFRESH_COOKIE = "refreshToken";
 const COOKIE_OPTS = {

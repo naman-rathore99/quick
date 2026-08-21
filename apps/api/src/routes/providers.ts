@@ -2,7 +2,7 @@ import { Router, Response } from "express";
 import { supabase } from "../lib/db";
 import { requireAuth, AuthRequest } from "../middleware/requireAuth";
 
-const router = Router();
+const router: Router = Router();
 
 // ─── Provider Onboarding ───────────────────────────────────────────────────
 router.post("/onboard", requireAuth, async (req: AuthRequest, res: Response) => {

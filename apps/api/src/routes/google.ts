@@ -1,7 +1,8 @@
 import { Router, Request, Response } from "express";
+import { OAuth2Client } from "google-auth-library";
 import { supabase } from "../lib/db";
 
-const router = Router();
+const router: Router = Router();
 
 const REFRESH_COOKIE = "refreshToken";
 const COOKIE_OPTS = {
