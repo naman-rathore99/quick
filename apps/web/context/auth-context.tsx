@@ -18,6 +18,8 @@ interface AuthContextType {
   register: (name: string, email: string, pass: string, role?: string) => Promise<void>;
   logout: () => Promise<void>;
   googleLogin: () => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  verifyPasswordReset: (email: string, token: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -124,8 +126,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw new Error(error.message);
   };
 
+  const requestPasswordReset = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) throw new Error(error.message);
+  };
+
+  const verifyPasswordReset = async (email: string, token: string, newPassword: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'recovery',
+    });
+    if (error) throw new Error(error.message);
+
+    // After verifying OTP, the user is logged in. Now update the password.
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    if (updateError) throw new Error(updateError.message);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, googleLogin }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, googleLogin, requestPasswordReset, verifyPasswordReset }}>
       {children}
     </AuthContext.Provider>
   );
