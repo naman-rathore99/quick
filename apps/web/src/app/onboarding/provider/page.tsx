@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "../../../../context/auth-context";
 
 export default function ProviderOnboardingPage() {
   const router = useRouter();
+  const { accessToken } = useAuth();
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -33,15 +35,13 @@ export default function ProviderOnboardingPage() {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      // Assuming user is already logged in, we fetch the token from context/local storage in a real app
-      // Here we just make the API call to our backend port 4000
-      const token = "TODO_GET_TOKEN_FROM_AUTH_CONTEXT"; 
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
       
-      const res = await fetch("http://localhost:4000/providers/onboard", {
+      const res = await fetch(`${API_URL}/providers/onboard`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           location,
