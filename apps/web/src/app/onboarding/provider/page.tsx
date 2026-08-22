@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "../../../../context/auth-context";
-import { createBrowserClient } from "../../../../utils/supabase/client";
+import { createClient } from "../../../../utils/supabase/client";
 
 export default function ProviderOnboardingPage() {
   const router = useRouter();
-  const supabase = createBrowserClient();
+  const supabase = createClient();
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
