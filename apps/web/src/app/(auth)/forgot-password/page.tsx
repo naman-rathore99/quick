@@ -4,8 +4,9 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { PasswordInput } from "@/components/auth/password-input";
 import { useAuth } from "../../../../context/auth-context";
-import { Sparkles, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Sparkles, ArrowRight } from "lucide-react";
 
 function ForgotPasswordContent() {
   const { requestPasswordReset, verifyPasswordReset } = useAuth();
@@ -16,7 +17,6 @@ function ForgotPasswordContent() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -159,24 +159,13 @@ function ForgotPasswordContent() {
                     <label htmlFor="newPassword" className="block text-sm font-medium text-foreground">
                       New Password
                     </label>
-                    <div className="relative">
-                      <input
-                        id="newPassword"
-                        type={showPassword ? "text" : "password"}
-                        required
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="block w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all pr-12"
-                        placeholder="Min. 8 characters"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
-                      >
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                      </button>
-                    </div>
+                    <PasswordInput
+                      id="newPassword"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Min. 8 characters"
+                      showStrength={true}
+                    />
                   </div>
 
                   <button
