@@ -27,7 +27,7 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await register(name, email, password);
-      router.push("/dashboard");
+      router.push("/"); // Redirect to home/services instead of non-existent /dashboard
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
