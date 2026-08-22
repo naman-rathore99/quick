@@ -133,7 +133,7 @@ export default function SignupPage() {
 
         <p className="mt-4 text-center text-sm text-muted-foreground">
           Looking to provide services?{" "}
-          <Link href="/partner-signup" className="font-medium text-primary hover:underline">
+          <Link href="/partner" className="font-medium text-primary hover:underline">
             Become a QuickDidi Partner
           </Link>
         </p>
