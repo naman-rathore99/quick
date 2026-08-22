@@ -176,7 +176,7 @@ function SignupContent() {
             <div className="space-y-6">
               <div className="flex items-center gap-4">
                 <CheckCircle2 className="w-6 h-6 text-primary" />
-                <span className="text-xl font-light text-zinc-200">Verified & background-checked professionals</span>
+                <span className="text-xl font-light text-zinc-200">Connect with local service providers instantly</span>
               </div>
               <div className="flex items-center gap-4">
                 <CheckCircle2 className="w-6 h-6 text-primary" />
