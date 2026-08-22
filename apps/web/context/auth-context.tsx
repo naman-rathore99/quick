@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         full_name: name,
         role: assignedRole,
         updated_at: new Date().toISOString()
-      });
+      } as any);
     }
   };
 
