@@ -32,11 +32,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (session?.user) {
         // Fetch the user's role from the public users table
-        const { data: profile } = await supabase
+        const { data } = await supabase
           .from("users")
           .select("full_name, role")
           .eq("id", session.user.id)
           .single();
+        
+        const profile = data as any;
 
         setUser({
           id: session.user.id,
@@ -54,11 +56,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        const { data: profile } = await supabase
+        const { data } = await supabase
           .from("users")
           .select("full_name, role")
           .eq("id", session.user.id)
           .single();
+        
+        const profile = data as any;
 
         setUser({
           id: session.user.id,
