@@ -1,11 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const google_auth_library_1 = require("google-auth-library");
-const User_1 = require("../models/User");
-const jwt_1 = require("../lib/jwt");
+const db_1 = require("../lib/db");
 const router = (0, express_1.Router)();
-const client = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const REFRESH_COOKIE = "refreshToken";
 const COOKIE_OPTS = {
     httpOnly: true,
@@ -20,37 +17,27 @@ router.post("/google", async (req, res) => {
         return;
     }
     try {
-        const ticket = await client.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
-        const payload = ticket.getPayload();
-        if (!payload?.email) {
-            res.status(400).json({ message: "Invalid Google token" });
+        const { data, error } = await db_1.supabase.auth.signInWithIdToken({
+            provider: "google",
+            token: idToken,
+        });
+        if (error || !data.session) {
+            res.status(401).json({ message: error?.message || "Failed to verify Google token with Supabase" });
             return;
         }
-        const { sub: googleId, email, name, picture } = payload;
-        let user = await User_1.User.findOne({ $or: [{ googleId }, { email }] });
-        if (user) {
-            if (!user.googleId) {
-                user.googleId = googleId;
-                user.avatar = user.avatar || picture;
-                await user.save();
+        res.cookie(REFRESH_COOKIE, data.session.refresh_token, COOKIE_OPTS);
+        const user = data.user;
+        res.json({
+            accessToken: data.session.access_token,
+            user: {
+                id: user.id,
+                name: user.user_metadata?.full_name || user.email?.split("@")[0],
+                email: user.email,
+                avatar: user.user_metadata?.avatar_url
             }
-        }
-        else {
-            user = await User_1.User.create({
-                name: name || email.split("@")[0],
-                email,
-                googleId,
-                avatar: picture,
-            });
-        }
-        const accessToken = (0, jwt_1.signAccessToken)(user.id);
-        const refreshToken = (0, jwt_1.signRefreshToken)(user.id);
-        user.refreshToken = refreshToken;
-        await user.save();
-        res.cookie(REFRESH_COOKIE, refreshToken, COOKIE_OPTS);
-        res.json({ accessToken, user: { id: user.id, name: user.name, email: user.email, avatar: user.avatar } });
+        });
     }
-    catch {
+    catch (error) {
         res.status(401).json({ message: "Failed to verify Google token" });
     }
 });

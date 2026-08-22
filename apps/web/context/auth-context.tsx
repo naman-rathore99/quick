@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
-import { createBrowserClient } from "../../utils/supabase/client";
+import { createBrowserClient } from "../utils/supabase/client";
 
 export interface AuthUser {
   id: string;
