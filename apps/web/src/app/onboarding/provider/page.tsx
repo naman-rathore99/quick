@@ -4,10 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "../../../../context/auth-context";
+import { createBrowserClient } from "../../../../utils/supabase/client";
 
 export default function ProviderOnboardingPage() {
   const router = useRouter();
-  const { accessToken } = useAuth();
+  const supabase = createBrowserClient();
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -35,13 +36,15 @@ export default function ProviderOnboardingPage() {
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
       
       const res = await fetch(`${API_URL}/providers/onboard`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`
+          "Authorization": `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({
           location,
