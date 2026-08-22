@@ -8,7 +8,7 @@ interface AuthState {
   accessToken: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, role?: string) => Promise<void>;
   googleLogin: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -42,8 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await handleAuthResponse(token, u);
   }, [handleAuthResponse]);
 
-  const register = useCallback(async (name: string, email: string, password: string) => {
-    const { accessToken: token, user: u } = await authApi.register(name, email, password);
+  const register = useCallback(async (name: string, email: string, password: string, role?: string) => {
+    const { accessToken: token, user: u } = await authApi.register(name, email, password, role);
     await handleAuthResponse(token, u);
   }, [handleAuthResponse]);
 

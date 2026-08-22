@@ -27,19 +27,32 @@ function safeUser(user: any) {
 
 // ─── Register ──────────────────────────────────────────────────────────────
 router.post("/register", async (req: Request, res: Response) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role } = req.body;
   if (!name || !email || !password) { res.status(400).json({ message: "All fields are required" }); return; }
   if (password.length < 8) { res.status(400).json({ message: "Password must be at least 8 characters" }); return; }
+
+  const assignedRole = role === "provider" ? "provider" : "customer";
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: name } }
+    options: { data: { full_name: name, role: assignedRole } }
   });
 
   if (error || !data.session) {
     res.status(400).json({ message: error?.message || "Registration failed. (Email may require confirmation)" });
     return;
+  }
+
+  // Also make sure they are in the public.users table with the correct role
+  // (In case the database trigger doesn't map it correctly, we force an upsert here for reliability)
+  if (data.user) {
+    await supabase.from("users").upsert({
+      id: data.user.id,
+      full_name: name,
+      role: assignedRole,
+      updated_at: new Date().toISOString()
+    });
   }
 
   setRefreshCookie(res, data.session.refresh_token);

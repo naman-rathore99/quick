@@ -4,10 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { GoogleAuthButton } from "@/components/auth/google-auth-button";
 import { useAuth } from "../../../../context/auth-context";
 
-export default function SignupPage() {
+export default function PartnerSignupPage() {
   const { register } = useAuth();
   const router = useRouter();
 
@@ -26,8 +25,10 @@ export default function SignupPage() {
     }
     setLoading(true);
     try {
-      await register(name, email, password);
-      router.push("/dashboard");
+      // Pass "provider" as the role to distinguish them from standard users
+      await register(name, email, password, "provider");
+      // Route providers to their specific onboarding page
+      router.push("/onboarding/provider");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
@@ -44,20 +45,12 @@ export default function SignupPage() {
         className="w-full max-w-sm"
       >
         <Link href="/" className="block text-center text-2xl font-bold tracking-tight text-foreground mb-8">
-          QuickDidi
+          QuickDidi Partners
         </Link>
 
         <div className="rounded-2xl border border-border/60 bg-card p-8 shadow-sm">
-          <h1 className="text-xl font-semibold text-foreground mb-1">Create account</h1>
-          <p className="text-sm text-muted-foreground mb-6">Start booking trusted home services</p>
-
-          <GoogleAuthButton mode="signup" />
-
-          <div className="my-5 flex items-center gap-3">
-            <div className="h-px flex-1 bg-border/60" />
-            <span className="text-xs text-muted-foreground">or</span>
-            <div className="h-px flex-1 bg-border/60" />
-          </div>
+          <h1 className="text-xl font-semibold text-foreground mb-1">Become a Didi</h1>
+          <p className="text-sm text-muted-foreground mb-6">Earn on your own schedule</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -119,22 +112,15 @@ export default function SignupPage() {
               disabled={loading}
               className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition disabled:opacity-50"
             >
-              {loading ? "Creating account…" : "Create account"}
+              {loading ? "Creating account..." : "Start Earning"}
             </button>
           </form>
         </div>
 
         <p className="mt-5 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link href="/login" className="font-medium text-primary hover:underline">
-            Sign in
-          </Link>
-        </p>
-
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          Looking to provide services?{" "}
-          <Link href="/partner-signup" className="font-medium text-primary hover:underline">
-            Become a QuickDidi Partner
+          Looking to book a service?{" "}
+          <Link href="/signup" className="font-medium text-primary hover:underline">
+            Sign up as a Customer
           </Link>
         </p>
       </motion.div>
