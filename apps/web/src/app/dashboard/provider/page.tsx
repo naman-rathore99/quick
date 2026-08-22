@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { DollarSign, Briefcase, Star, Clock, CheckCircle, XCircle } from "lucide-react";
-import { useAuth } from "../../../../../context/auth-context";
+import { useAuth } from "../../../../context/auth-context";
 
 // Mock data to make the dashboard look complete quickly
 const STATS = [

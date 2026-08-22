@@ -10,7 +10,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { CartSheet } from "@/features/cart/components/CartSheet";
-import { useAuth } from "../../../../context/auth-context";
+import { useAuth } from "../../../context/auth-context";
 
 import { layoutContainer, navBar, navLink } from "@/lib/design-system";
 import { PRIMARY_NAV_LINKS } from "./nav-links";
