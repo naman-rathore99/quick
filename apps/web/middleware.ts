@@ -12,13 +12,13 @@ export async function middleware(req: NextRequest) {
 
   const isGuestOnly = GUEST_ONLY.some((p) => pathname.startsWith(p));
   const isAdminRoute = pathname.startsWith("/admin");
-  const isCustomerRoute = pathname.startsWith("/customer");
-  const isProviderRoute = pathname.startsWith("/provider");
+  const isProviderRoute = pathname.startsWith("/dashboard/provider") || pathname.startsWith("/onboarding/provider");
+  const isCustomerRoute = pathname === "/dashboard" || (pathname.startsWith("/dashboard/") && !isProviderRoute);
 
   // 1. Guest Routes Handling
   if (isGuestOnly && user) {
     const url = req.nextUrl.clone();
-    url.pathname = "/customer"; // Default redirect
+    url.pathname = "/dashboard"; // Default redirect for logged-in users
     return NextResponse.redirect(url);
   }
 
@@ -39,16 +39,14 @@ export async function middleware(req: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    const typedProfile = profile as { role: string } | null;
-
-    if (typedProfile?.role !== "admin") {
+    if (profile?.role !== "admin") {
       const url = req.nextUrl.clone();
       url.pathname = "/"; // Redirect non-admins to homepage
       return NextResponse.redirect(url);
     }
   }
 
-  // 4. Provider Route Security (Optional for future)
+  // 4. Provider Route Security
   if (isProviderRoute && user) {
     const { data: profile } = await supabase
       .from("users")
@@ -56,11 +54,9 @@ export async function middleware(req: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    const typedProfile = profile as { role: string } | null;
-
-    if (typedProfile?.role !== "provider" && typedProfile?.role !== "admin") {
+    if (profile?.role !== "provider" && profile?.role !== "admin") {
       const url = req.nextUrl.clone();
-      url.pathname = "/partner"; // Redirect to onboarding
+      url.pathname = "/partner"; // Redirect normal users to partner landing page
       return NextResponse.redirect(url);
     }
   }
