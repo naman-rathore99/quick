@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { User, MapPin, CreditCard, Clock, History, Calendar, CheckCircle, ChevronRight } from "lucide-react";
-import { useAuth } from "../../../../context/auth-context";
+import { useAuth } from "../../../context/auth-context";
 
 // Mock Data
 const ACTIVE_BOOKINGS = [
