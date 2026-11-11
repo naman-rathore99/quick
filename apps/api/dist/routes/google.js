@@ -12,7 +12,7 @@ const COOKIE_OPTS = {
     secure: IS_PROD,
     sameSite: "strict", // ← upgraded from "lax" to block CSRF
     maxAge: 7 * 24 * 60 * 60 * 1000,
-    path: "/auth", // ← scope cookie to /auth paths only
+    path: "/",
 };
 router.post("/google", (0, authRateLimit_1.authRateLimit)(15), async (req, res) => {
     const { idToken } = req.body ?? {};

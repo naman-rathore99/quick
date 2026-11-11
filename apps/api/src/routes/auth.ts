@@ -14,7 +14,7 @@ const COOKIE_OPTS = {
   secure: IS_PROD,
   sameSite: "strict" as const,        // ← upgraded from "lax" to block CSRF
   maxAge: 7 * 24 * 60 * 60 * 1000,
-  path: "/auth",                       // ← scope cookie to /auth paths only
+  path: "/",
 };
 
 function setRefreshCookie(res: Response, token: string) {
