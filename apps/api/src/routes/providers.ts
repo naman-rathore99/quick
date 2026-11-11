@@ -1,11 +1,13 @@
 import { Router, Response } from "express";
 import { supabase } from "../lib/db";
 import { requireAuth, AuthRequest } from "../middleware/requireAuth";
+import { apiRateLimit } from "../middleware/authRateLimit";
 
 const router: Router = Router();
+const providerRateLimit = apiRateLimit(60);
 
 // ─── Provider Onboarding ───────────────────────────────────────────────────
-router.post("/onboard", requireAuth, async (req: AuthRequest, res: Response) => {
+router.post("/onboard", requireAuth, providerRateLimit, async (req: AuthRequest, res: Response) => {
   const { location, bio, services } = req.body;
   
   if (!location || !services || !Array.isArray(services) || services.length === 0) { 
@@ -23,7 +25,8 @@ router.post("/onboard", requireAuth, async (req: AuthRequest, res: Response) => 
     .eq("id", req.userId);
 
   if (userError) {
-    res.status(500).json({ message: "Failed to update user profile", error: userError.message });
+    console.error("Failed to update user profile:", userError.message);
+    res.status(500).json({ message: "Failed to update user profile" });
     return;
   }
 
@@ -42,7 +45,8 @@ router.post("/onboard", requireAuth, async (req: AuthRequest, res: Response) => 
     .insert(providerServices);
 
   if (servicesError) {
-    res.status(500).json({ message: "Failed to save provider services", error: servicesError.message });
+    console.error("Failed to save provider services:", servicesError.message);
+    res.status(500).json({ message: "Failed to save provider services" });
     return;
   }
 
@@ -50,8 +54,14 @@ router.post("/onboard", requireAuth, async (req: AuthRequest, res: Response) => 
 });
 
 // ─── Get Providers for a Service ───────────────────────────────────────────
-router.get("/", async (req: AuthRequest, res: Response) => {
+router.get("/", providerRateLimit, async (req: AuthRequest, res: Response) => {
   const { service_id } = req.query;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  if (service_id && (typeof service_id !== "string" || !uuidRegex.test(service_id))) {
+    res.status(400).json({ message: "Invalid service filter." });
+    return;
+  }
 
   let query = supabase
     .from("provider_services")
@@ -70,7 +80,8 @@ router.get("/", async (req: AuthRequest, res: Response) => {
   const { data, error } = await query;
 
   if (error) {
-    res.status(500).json({ message: "Failed to fetch providers", error: error.message });
+    console.error("Failed to fetch providers:", error.message);
+    res.status(500).json({ message: "Failed to fetch providers" });
     return;
   }
 

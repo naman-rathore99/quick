@@ -3,9 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const db_1 = require("../lib/db");
 const requireAuth_1 = require("../middleware/requireAuth");
+const authRateLimit_1 = require("../middleware/authRateLimit");
 const router = (0, express_1.Router)();
+const providerRateLimit = (0, authRateLimit_1.apiRateLimit)(60);
 // ─── Provider Onboarding ───────────────────────────────────────────────────
-router.post("/onboard", requireAuth_1.requireAuth, async (req, res) => {
+router.post("/onboard", requireAuth_1.requireAuth, providerRateLimit, async (req, res) => {
     const { location, bio, services } = req.body;
     if (!location || !services || !Array.isArray(services) || services.length === 0) {
         res.status(400).json({ message: "Location and at least one service are required" });
@@ -20,7 +22,8 @@ router.post("/onboard", requireAuth_1.requireAuth, async (req, res) => {
     })
         .eq("id", req.userId);
     if (userError) {
-        res.status(500).json({ message: "Failed to update user profile", error: userError.message });
+        console.error("Failed to update user profile:", userError.message);
+        res.status(500).json({ message: "Failed to update user profile" });
         return;
     }
     // 2. Prepare provider services records
@@ -36,14 +39,20 @@ router.post("/onboard", requireAuth_1.requireAuth, async (req, res) => {
         .from("provider_services")
         .insert(providerServices);
     if (servicesError) {
-        res.status(500).json({ message: "Failed to save provider services", error: servicesError.message });
+        console.error("Failed to save provider services:", servicesError.message);
+        res.status(500).json({ message: "Failed to save provider services" });
         return;
     }
     res.status(201).json({ message: "Onboarding successful. You are now a provider!" });
 });
 // ─── Get Providers for a Service ───────────────────────────────────────────
-router.get("/", async (req, res) => {
+router.get("/", providerRateLimit, async (req, res) => {
     const { service_id } = req.query;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (service_id && (typeof service_id !== "string" || !uuidRegex.test(service_id))) {
+        res.status(400).json({ message: "Invalid service filter." });
+        return;
+    }
     let query = db_1.supabase
         .from("provider_services")
         .select(`
@@ -58,7 +67,8 @@ router.get("/", async (req, res) => {
     }
     const { data, error } = await query;
     if (error) {
-        res.status(500).json({ message: "Failed to fetch providers", error: error.message });
+        console.error("Failed to fetch providers:", error.message);
+        res.status(500).json({ message: "Failed to fetch providers" });
         return;
     }
     res.json({ providers: data });

@@ -13,7 +13,11 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
     return;
   }
 
-  const token = authHeader.slice(7);
+  const token = authHeader.slice(7).trim();
+  if (!token) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
   try {
     const { data: { user }, error } = await supabase.auth.getUser(token);
     if (error || !user) throw error;

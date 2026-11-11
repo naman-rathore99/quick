@@ -1,29 +1,32 @@
 import { Router, Request, Response } from "express";
-import { OAuth2Client } from "google-auth-library";
 import { supabase } from "../lib/db";
+import { authRateLimit } from "../middleware/authRateLimit";
 
 const router: Router = Router();
 
 const REFRESH_COOKIE = "refreshToken";
+const IS_PROD = process.env.NODE_ENV === "production";
 const COOKIE_OPTS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
+  secure: IS_PROD,
+  sameSite: "strict" as const,
   maxAge: 7 * 24 * 60 * 60 * 1000,
+  path: "/",
 };
 
-router.post("/google", async (req: Request, res: Response) => {
-  const { idToken } = req.body;
-  if (!idToken) { res.status(400).json({ message: "ID token is required" }); return; }
+router.post("/google", authRateLimit(15), async (req: Request, res: Response) => {
+  const { idToken } = req.body ?? {};
+  if (typeof idToken !== "string" || !idToken.trim()) { res.status(400).json({ message: "ID token is required" }); return; }
 
   try {
     const { data, error } = await supabase.auth.signInWithIdToken({
       provider: "google",
-      token: idToken,
+      token: idToken.trim(),
     });
 
     if (error || !data.session) {
-      res.status(401).json({ message: error?.message || "Failed to verify Google token with Supabase" }); 
+      console.error("Google auth error:", error?.message);
+      res.status(401).json({ message: "Failed to verify Google token with Supabase" }); 
       return;
     }
 

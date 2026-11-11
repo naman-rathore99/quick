@@ -1,11 +1,13 @@
 import express, { Router, Response } from "express";
 import { supabase } from "../lib/db";
 import { requireAuth, AuthRequest } from "../middleware/requireAuth";
+import { apiRateLimit } from "../middleware/authRateLimit";
 
 const router: Router = express.Router();
+const bookingRateLimit = apiRateLimit(30);
 
 // ─── Create a Booking ──────────────────────────────────────────────────────
-router.post("/", requireAuth, async (req: AuthRequest, res: Response) => {
+router.post("/", requireAuth, bookingRateLimit, async (req: AuthRequest, res: Response) => {
   const { serviceId, scheduledFor, agreedPrice, providerId } = req.body;
   
   if (!serviceId || !scheduledFor) { 
@@ -30,7 +32,8 @@ router.post("/", requireAuth, async (req: AuthRequest, res: Response) => {
     .single();
 
   if (error) {
-    res.status(500).json({ message: "Failed to create booking", error: error.message });
+    console.error("Failed to create booking:", error.message);
+    res.status(500).json({ message: "Failed to create booking" });
     return;
   }
 
@@ -38,7 +41,7 @@ router.post("/", requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 // ─── Get User's Bookings ───────────────────────────────────────────────────
-router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
+router.get("/", requireAuth, bookingRateLimit, async (req: AuthRequest, res: Response) => {
   const { data, error } = await supabase
     .from("bookings")
     .select("*")
@@ -46,7 +49,8 @@ router.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
     .order("created_at", { ascending: false });
 
   if (error) {
-    res.status(500).json({ message: "Failed to fetch bookings", error: error.message });
+    console.error("Failed to fetch bookings:", error.message);
+    res.status(500).json({ message: "Failed to fetch bookings" });
     return;
   }
 

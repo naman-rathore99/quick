@@ -3,13 +3,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const db_1 = require("../lib/db");
 const requireAuth_1 = require("../middleware/requireAuth");
+const authRateLimit_1 = require("../middleware/authRateLimit");
 const router = (0, express_1.Router)();
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REFRESH_COOKIE = "refreshToken";
+const IS_PROD = process.env.NODE_ENV === "production";
 const COOKIE_OPTS = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: IS_PROD,
+    sameSite: "strict",
     maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/",
 };
 function setRefreshCookie(res, token) {
     res.cookie(REFRESH_COOKIE, token, COOKIE_OPTS);
@@ -23,32 +27,31 @@ function safeUser(user) {
     };
 }
 // ─── Register ──────────────────────────────────────────────────────────────
-router.post("/register", async (req, res) => {
-    const { name, email, password, role } = req.body;
-    if (!name || !email || !password) {
-        res.status(400).json({ message: "All fields are required" });
-        return;
-    }
-    if (password.length < 8) {
-        res.status(400).json({ message: "Password must be at least 8 characters" });
+router.post("/register", (0, authRateLimit_1.authRateLimit)(8, 4), async (req, res) => {
+    const { name, email, password, role } = req.body ?? {};
+    if (typeof name !== "string" || !name.trim() || name.trim().length > 100 ||
+        typeof email !== "string" || !email.trim() || email.trim().length > 254 || !EMAIL_REGEX.test(email.trim()) ||
+        typeof password !== "string" || password.length < 8 || password.length > 128) {
+        res.status(400).json({ message: "Provide a valid name, email address, and password (8-128 characters)." });
         return;
     }
     const assignedRole = role === "provider" ? "provider" : "customer";
     const { data, error } = await db_1.supabase.auth.signUp({
-        email,
+        email: email.trim().toLowerCase(),
         password,
-        options: { data: { full_name: name, role: assignedRole } }
+        options: { data: { full_name: name.trim(), role: assignedRole } }
     });
     if (error || !data.session) {
-        res.status(400).json({ message: error?.message || "Registration failed. (Email may require confirmation)" });
+        console.error("Registration error:", error?.message);
+        const status = error?.status === 429 ? 429 : 400;
+        res.status(status).json({ message: status === 429 ? "Too many attempts. Try again shortly." : "Registration failed. Check your details and try again." });
         return;
     }
     // Also make sure they are in the public.users table with the correct role
-    // (In case the database trigger doesn't map it correctly, we force an upsert here for reliability)
     if (data.user) {
         await db_1.supabase.from("users").upsert({
             id: data.user.id,
-            full_name: name,
+            full_name: name.trim(),
             role: assignedRole,
             updated_at: new Date().toISOString()
         });
@@ -57,22 +60,25 @@ router.post("/register", async (req, res) => {
     res.status(201).json({ accessToken: data.session.access_token, user: safeUser(data.user) });
 });
 // ─── Login ─────────────────────────────────────────────────────────────────
-router.post("/login", async (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
-        res.status(400).json({ message: "Email and password are required" });
+router.post("/login", (0, authRateLimit_1.authRateLimit)(20, 6), async (req, res) => {
+    const { email, password } = req.body ?? {};
+    if (typeof email !== "string" || !email.trim() || email.trim().length > 254 || !EMAIL_REGEX.test(email.trim()) ||
+        typeof password !== "string" || !password || password.length > 128) {
+        res.status(400).json({ message: "Valid email and password are required" });
         return;
     }
-    const { data, error } = await db_1.supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await db_1.supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
     if (error || !data.session) {
-        res.status(401).json({ message: error?.message || "Invalid credentials" });
+        res.status(error?.status === 429 ? 429 : 401).json({
+            message: error?.status === 429 ? "Too many sign-in attempts. Try again shortly." : "Invalid credentials"
+        });
         return;
     }
     setRefreshCookie(res, data.session.refresh_token);
     res.json({ accessToken: data.session.access_token, user: safeUser(data.user) });
 });
 // ─── Refresh Token ─────────────────────────────────────────────────────────
-router.post("/refresh", async (req, res) => {
+router.post("/refresh", (0, authRateLimit_1.authRateLimit)(45), async (req, res) => {
     const token = req.cookies?.[REFRESH_COOKIE];
     if (!token) {
         res.status(401).json({ message: "No refresh token" });
@@ -87,7 +93,7 @@ router.post("/refresh", async (req, res) => {
     res.json({ accessToken: data.session.access_token });
 });
 // ─── Me ────────────────────────────────────────────────────────────────────
-router.get("/me", requireAuth_1.requireAuth, async (req, res) => {
+router.get("/me", requireAuth_1.requireAuth, (0, authRateLimit_1.authRateLimit)(60), async (req, res) => {
     if (!req.user) {
         res.status(404).json({ message: "User not found" });
         return;
@@ -95,24 +101,26 @@ router.get("/me", requireAuth_1.requireAuth, async (req, res) => {
     res.json(safeUser(req.user));
 });
 // ─── Logout ────────────────────────────────────────────────────────────────
-router.post("/logout", requireAuth_1.requireAuth, async (req, res) => {
+router.post("/logout", (0, authRateLimit_1.authRateLimit)(30), async (req, res) => {
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith("Bearer ")) {
-        const token = authHeader.slice(7);
-        await db_1.supabase.auth.admin.signOut(token);
+        const token = authHeader.slice(7).trim();
+        if (token) {
+            await db_1.supabase.auth.admin.signOut(token).catch(() => undefined);
+        }
     }
-    res.clearCookie(REFRESH_COOKIE);
+    res.clearCookie(REFRESH_COOKIE, COOKIE_OPTS);
     res.json({ message: "Logged out" });
 });
 // ─── Forgot Password ───────────────────────────────────────────────────────
-router.post("/forgot-password", async (req, res) => {
-    const { email } = req.body;
-    if (!email) {
-        res.status(400).json({ message: "Email is required" });
+router.post("/forgot-password", (0, authRateLimit_1.authRateLimit)(8, 3), async (req, res) => {
+    const { email } = req.body ?? {};
+    if (typeof email !== "string" || !email.trim() || email.trim().length > 254 || !EMAIL_REGEX.test(email.trim())) {
+        res.status(400).json({ message: "A valid email address is required" });
         return;
     }
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password`;
-    const { error } = await db_1.supabase.auth.resetPasswordForEmail(email, {
+    const resetUrl = `${process.env.FRONTEND_URL || "https://www.quickdidi.com"}/reset-password`;
+    const { error } = await db_1.supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
         redirectTo: resetUrl,
     });
     if (error) {
@@ -121,26 +129,22 @@ router.post("/forgot-password", async (req, res) => {
     res.json({ message: "If that email exists, a reset link has been sent" });
 });
 // ─── Reset Password ────────────────────────────────────────────────────────
-router.post("/reset-password", async (req, res) => {
-    const { token, password } = req.body;
-    // With Supabase, token reset usually implies we use the pkce flow or have the user logged in directly via a hash in the url.
-    // Since we accept a token and password here, if you have a raw recovery token:
-    if (!token || !password) {
-        res.status(400).json({ message: "Token and new password are required" });
+router.post("/reset-password", (0, authRateLimit_1.authRateLimit)(10), async (req, res) => {
+    const { token, password } = req.body ?? {};
+    if (typeof token !== "string" || !token.trim() || token.length > 500 ||
+        typeof password !== "string" || password.length < 8 || password.length > 128) {
+        res.status(400).json({ message: "Valid token and new password (8-128 characters) are required" });
         return;
     }
-    if (password.length < 8) {
-        res.status(400).json({ message: "Password must be at least 8 characters" });
-        return;
-    }
-    const { error } = await db_1.supabase.auth.verifyOtp({ email: token, token, type: 'recovery' });
+    const { error } = await db_1.supabase.auth.verifyOtp({ email: token.trim(), token: token.trim(), type: 'recovery' });
     if (error) {
         res.status(400).json({ message: "Invalid or expired reset token" });
         return;
     }
     const { error: updateError } = await db_1.supabase.auth.updateUser({ password });
     if (updateError) {
-        res.status(400).json({ message: updateError.message });
+        console.error("Password update error:", updateError.message);
+        res.status(400).json({ message: "Could not update password. Try a stronger password." });
         return;
     }
     res.json({ message: "Password reset successfully" });

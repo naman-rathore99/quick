@@ -6,9 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const db_1 = require("../lib/db");
 const requireAuth_1 = require("../middleware/requireAuth");
+const authRateLimit_1 = require("../middleware/authRateLimit");
 const router = express_1.default.Router();
+const bookingRateLimit = (0, authRateLimit_1.apiRateLimit)(30);
 // ─── Create a Booking ──────────────────────────────────────────────────────
-router.post("/", requireAuth_1.requireAuth, async (req, res) => {
+router.post("/", requireAuth_1.requireAuth, bookingRateLimit, async (req, res) => {
     const { serviceId, scheduledFor, agreedPrice, providerId } = req.body;
     if (!serviceId || !scheduledFor) {
         res.status(400).json({ message: "Service ID and scheduled time are required" });
@@ -30,20 +32,22 @@ router.post("/", requireAuth_1.requireAuth, async (req, res) => {
         .select()
         .single();
     if (error) {
-        res.status(500).json({ message: "Failed to create booking", error: error.message });
+        console.error("Failed to create booking:", error.message);
+        res.status(500).json({ message: "Failed to create booking" });
         return;
     }
     res.status(201).json({ message: "Booking confirmed", booking: data });
 });
 // ─── Get User's Bookings ───────────────────────────────────────────────────
-router.get("/", requireAuth_1.requireAuth, async (req, res) => {
+router.get("/", requireAuth_1.requireAuth, bookingRateLimit, async (req, res) => {
     const { data, error } = await db_1.supabase
         .from("bookings")
         .select("*")
         .eq("customer_id", req.userId)
         .order("created_at", { ascending: false });
     if (error) {
-        res.status(500).json({ message: "Failed to fetch bookings", error: error.message });
+        console.error("Failed to fetch bookings:", error.message);
+        res.status(500).json({ message: "Failed to fetch bookings" });
         return;
     }
     res.json({ bookings: data });

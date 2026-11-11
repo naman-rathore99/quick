@@ -8,7 +8,11 @@ async function requireAuth(req, res, next) {
         res.status(401).json({ message: "Unauthorized" });
         return;
     }
-    const token = authHeader.slice(7);
+    const token = authHeader.slice(7).trim();
+    if (!token) {
+        res.status(401).json({ message: "Unauthorized" });
+        return;
+    }
     try {
         const { data: { user }, error } = await db_1.supabase.auth.getUser(token);
         if (error || !user)

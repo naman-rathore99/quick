@@ -2,8 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendPasswordResetEmail = sendPasswordResetEmail;
 const resend_1 = require("resend");
-const resend = new resend_1.Resend(process.env.RESEND_API_KEY);
 async function sendPasswordResetEmail(to, resetUrl) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+        console.warn("RESEND_API_KEY is not set. Email not sent.");
+        return;
+    }
+    const resend = new resend_1.Resend(apiKey);
     await resend.emails.send({
         from: "QuickDidi <no-reply@quickdidi.com>",
         to,
