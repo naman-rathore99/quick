@@ -15,8 +15,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Quick DIDI",
-  description: "Quick Didi make your life good",
+  title: "QuickDidi | A little help at home",
+  description: "Book a trusted Didi for cleaning, dusting, or cooking.",
 };
 
 export default function RootLayout({

@@ -16,6 +16,7 @@ export interface AuthUser {
   name: string;
   email: string;
   avatar?: string;
+  role: "customer" | "provider";
 }
 
 export interface AuthResponse {
@@ -25,7 +26,7 @@ export interface AuthResponse {
 
 export const authApi = {
   register: (name: string, email: string, password: string) =>
-    request<AuthResponse>("/auth/register", {
+    request<AuthResponse | { confirmationRequired: true }>("/auth/register", {
       method: "POST",
       body: JSON.stringify({ name, email, password }),
     }),
@@ -48,10 +49,10 @@ export const authApi = {
       body: JSON.stringify({ email }),
     }),
 
-  resetPassword: (token: string, password: string) =>
+  resetPassword: (token: string, password: string, refreshToken?: string) =>
     request<{ message: string }>("/auth/reset-password", {
       method: "POST",
-      body: JSON.stringify({ token, password }),
+      body: JSON.stringify({ token, password, refreshToken }),
     }),
 
   me: (accessToken: string) =>

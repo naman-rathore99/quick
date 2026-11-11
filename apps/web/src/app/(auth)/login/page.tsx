@@ -12,11 +12,12 @@ function LoginContent() {
   const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const from = searchParams.get("from") || "/dashboard";
+  const requestedPage = searchParams.get("from");
+  const from = requestedPage === "/checkout" || requestedPage === "/onboarding/provider" || requestedPage === "/my-appointments" ? requestedPage : "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(searchParams.get("error") === "google" ? "Google sign-in could not be completed. Please try again." : "");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -34,7 +35,7 @@ function LoginContent() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-background px-4">
+    <main className="qd-account flex items-center justify-center bg-background px-4">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}

@@ -15,6 +15,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [confirmationRequired, setConfirmationRequired] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -26,8 +27,8 @@ export default function SignupPage() {
     }
     setLoading(true);
     try {
-      await register(name, email, password);
-      router.push("/dashboard");
+      if (await register(name, email, password)) router.push("/");
+      else setConfirmationRequired(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
@@ -35,8 +36,12 @@ export default function SignupPage() {
     }
   }
 
+  if (confirmationRequired) {
+    return <main className="qd-flow mx-auto max-w-lg px-6"><h1>Check your email</h1><p className="mt-4">If your account can be registered, you will receive a confirmation link at {email}.</p><Link href="/login" className="mt-6 inline-block underline">Back to sign in</Link></main>;
+  }
+
   return (
-    <main className="min-h-screen flex items-center justify-center bg-background px-4">
+    <main className="qd-account flex items-center justify-center bg-background px-4">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}

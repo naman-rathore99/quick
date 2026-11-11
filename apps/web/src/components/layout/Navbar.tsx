@@ -1,7 +1,9 @@
-"use client";
+ "use client";
+
+import { useAuth } from "../../../context/auth-context";
 
 import Link from "next/link";
-import { Menu, Sun, Moon } from "lucide-react";
+import { Menu, Sun, Moon, House } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +34,7 @@ function ThemeToggle() {
 }
 
 export default function Navbar() {
+  const { user, logout } = useAuth();
   return (
     <header className={navBar}>
       <div
@@ -39,9 +42,9 @@ export default function Navbar() {
       >
         <Link
           href="/"
-          className="text-lg font-bold tracking-[-0.03em] text-foreground md:text-[1.35rem]"
+          className="qd-brand text-lg font-bold tracking-[-0.03em] text-foreground md:text-[1.35rem]"
         >
-          QuickDidi
+          <House aria-hidden="true" /> QuickDidi
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex" aria-label="Primary">
@@ -54,13 +57,12 @@ export default function Navbar() {
 
         <div className="hidden items-center gap-2.5 md:flex">
           <ThemeToggle />
-          <CartSheet />
-          <Link href="/login">
-            <Button variant="outline" size="default" type="button">
-              Login
-            </Button>
-          </Link>
-          <Link href="#services">
+          {user?.role === "provider" ? (
+            <Link href="/provider-bookings" className="qd-cta">Bookings</Link>
+          ) : <CartSheet />}
+          {user?.role === "customer" && <Link href="/my-appointments" className={navLink}>My appointments</Link>}
+          {user ? <Button variant="outline" onClick={() => void logout()}>Sign out</Button> : <Link href="/login" className={navLink}>Sign in</Link>}
+          <Link href="/#services">
             <Button size="default" type="button">
               Book Now
             </Button>
@@ -69,7 +71,9 @@ export default function Navbar() {
 
         <div className="flex items-center gap-2 md:hidden">
           <ThemeToggle />
-          <CartSheet />
+          {user?.role === "provider" ? (
+            <Link href="/provider-bookings" className="qd-cta">Bookings</Link>
+          ) : <CartSheet />}
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Open menu">
@@ -91,12 +95,9 @@ export default function Navbar() {
               </nav>
 
               <div className="mt-6 flex flex-col gap-2.5 border-t border-border pt-6">
-                <Link href="/login" className="w-full">
-                  <Button variant="outline" type="button" className="w-full">
-                    Login
-                  </Button>
-                </Link>
-                <Link href="#services" className="w-full">
+                {user?.role === "customer" && <Link href="/my-appointments" className={navLink}>My appointments</Link>}
+                {user ? <Button variant="outline" onClick={() => void logout()}>Sign out</Button> : <Link href="/login" className={navLink}>Sign in</Link>}
+                <Link href="/#services" className="w-full">
                   <Button type="button" className="w-full">
                     Book Now
                   </Button>

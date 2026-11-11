@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 import type { CartLine } from "@/features/cart/model/types";
 
@@ -45,7 +46,7 @@ type CartStore = {
   clear: () => void;
 };
 
-export const useCartStore = create<CartStore>((set) => ({
+export const useCartStore = create<CartStore>()(persist((set) => ({
   lines: [],
   addItem: (serviceId, quantity = 1) =>
     set((s) => ({ lines: upsertLine(s.lines, serviceId, quantity) })),
@@ -60,4 +61,4 @@ export const useCartStore = create<CartStore>((set) => ({
   setQuantity: (serviceId, quantity) =>
     set((s) => ({ lines: setLineQuantity(s.lines, serviceId, quantity) })),
   clear: () => set({ lines: [] }),
-}));
+}), { name: "quickdidi-cart", storage: createJSONStorage(() => sessionStorage) }));

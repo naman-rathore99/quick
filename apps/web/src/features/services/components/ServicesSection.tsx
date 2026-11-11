@@ -1,13 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
+import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 import {
   layoutContainer,
-  sectionPadding,
-  surfaceMutedBand,
   textSectionSubtitle,
   textSectionTitle,
 } from "@/lib/design-system";
@@ -17,62 +15,66 @@ import { useServicesCatalog } from "../hooks/use-services-catalog";
 import { SERVICE_ICON_MAP } from "../services/service-icons";
 
 export function ServicesSection() {
-  const { items } = useServicesCatalog();
+  const { items, status } = useServicesCatalog();
+  const [available, setAvailable] = useState<Set<string> | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    fetch(`${api}/providers`, { signal: controller.signal }).then(async (response) => {
+      if (!response.ok) return;
+      const { providers }: { providers: { service_id: string; custom_price: number; users: { id: string } | null }[] } = await response.json();
+      if (!controller.signal.aborted) {
+        setAvailable(new Set(providers.filter((item) => item.users && item.custom_price > 0).map((item) => item.service_id)));
+      }
+    }).catch(() => {});
+    return () => controller.abort();
+  }, []);
+  const lines = useCartStore((state) => state.lines);
   const addItem = useCartStore((s) => s.addItem);
 
   return (
-    <section className={`${surfaceMutedBand} ${sectionPadding}`} id="services">
+    <section className="qd-services border-b bg-card py-12 md:py-16" id="services">
       <div className={layoutContainer}>
-        <div className="mx-auto mb-12 max-w-2xl text-center md:mb-16">
-          <h2 className={textSectionTitle}>Services You Can Trust</h2>
+        <div className="mb-7 max-w-2xl">
+          <h2 className={textSectionTitle}>Home services</h2>
           <p className={textSectionSubtitle}>
-            Choose from a range of verified home services tailored to your needs.
+            Add a service to your cart. You’ll see the price when you choose a provider.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {items.map((service, index) => {
+        {status && <p role="status">{status}</p>}
+        <ul className="grid gap-x-10 border-t md:grid-cols-2">
+          {items.map((service) => {
             const Icon = SERVICE_ICON_MAP[service.icon];
+            const quantity = lines.find((line) => line.serviceId === service.id)?.quantity ?? 0;
 
             return (
-              <motion.article
-                key={service.id}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                viewport={{ once: true, margin: "-40px" }}
-                className="h-full"
-              >
-                <Card className="group relative flex flex-col overflow-hidden rounded-3xl border border-border/40 bg-card hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-                  <CardContent className="flex h-full flex-col items-center gap-4 p-8 text-center">
-                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-muted/50 transition-colors duration-300 group-hover:bg-primary/10">
-                      <Icon className="h-8 w-8 text-foreground transition-colors duration-300 group-hover:text-primary" />
-                    </div>
-
-                    <h3 className="text-xl font-bold leading-snug tracking-tight text-foreground">
-                      {service.name}
-                    </h3>
-
-                    <p className="text-base font-semibold tabular-nums text-primary/80">
-                      <span className="text-muted-foreground font-medium text-sm">Starts at </span>₹{service.price}
-                    </p>
-
-                    <div className="mt-auto w-full pt-4">
-                      <Button
-                        type="button"
-                        size="lg"
-                        className="w-full rounded-xl text-base h-12 shadow-sm transition-all hover:scale-[1.02]"
-                        onClick={() => addItem(service.id)}
-                      >
-                        Book Service
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.article>
+              <li key={service.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b py-4 sm:gap-4">
+                <span className="grid size-10 place-items-center rounded-md bg-muted text-primary">
+                  <Icon aria-hidden="true" size={19} />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="font-semibold leading-snug">{service.name}</h3>
+                  {available && !available.has(service.id) && (
+                    <p className="mt-1 text-xs text-muted-foreground">No providers listed yet</p>
+                  )}
+                  <span aria-live="polite" className="text-xs text-primary">
+                    {quantity > 0 ? `${quantity} in cart` : ""}
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  aria-label={`Add ${service.name} to booking`}
+                  onClick={() => addItem(service.id)}
+                >
+                  <Plus size={15} aria-hidden="true" /> Add
+                </Button>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </div>
     </section>
   );

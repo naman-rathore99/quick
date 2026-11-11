@@ -8,18 +8,28 @@ exports.signRefreshToken = signRefreshToken;
 exports.verifyAccessToken = verifyAccessToken;
 exports.verifyRefreshToken = verifyRefreshToken;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+function getSecrets() {
+    const access = process.env.JWT_ACCESS_SECRET;
+    const refresh = process.env.JWT_REFRESH_SECRET;
+    if (!access || !refresh) {
+        throw new Error("JWT secrets (JWT_ACCESS_SECRET, JWT_REFRESH_SECRET) are not configured.");
+    }
+    return { access, refresh };
+}
 function signAccessToken(userId) {
-    return jsonwebtoken_1.default.sign({ sub: userId }, ACCESS_SECRET, { expiresIn: "15m" });
+    const { access } = getSecrets();
+    return jsonwebtoken_1.default.sign({ sub: userId }, access, { expiresIn: "15m" });
 }
 function signRefreshToken(userId) {
-    return jsonwebtoken_1.default.sign({ sub: userId }, REFRESH_SECRET, { expiresIn: "7d" });
+    const { refresh } = getSecrets();
+    return jsonwebtoken_1.default.sign({ sub: userId }, refresh, { expiresIn: "7d" });
 }
 function verifyAccessToken(token) {
-    return jsonwebtoken_1.default.verify(token, ACCESS_SECRET);
+    const { access } = getSecrets();
+    return jsonwebtoken_1.default.verify(token, access);
 }
 function verifyRefreshToken(token) {
-    return jsonwebtoken_1.default.verify(token, REFRESH_SECRET);
+    const { refresh } = getSecrets();
+    return jsonwebtoken_1.default.verify(token, refresh);
 }
 //# sourceMappingURL=jwt.js.map

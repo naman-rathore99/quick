@@ -1,20 +1,27 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.requireAuth = requireAuth;
-const jwt_1 = require("../lib/jwt");
-function requireAuth(req, res, next) {
+const db_1 = require("../lib/db");
+async function requireAuth(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {
         res.status(401).json({ message: "Unauthorized" });
         return;
     }
-    const token = authHeader.slice(7);
+    const token = authHeader.slice(7).trim();
+    if (!token) {
+        res.status(401).json({ message: "Unauthorized" });
+        return;
+    }
     try {
-        const payload = (0, jwt_1.verifyAccessToken)(token);
-        req.userId = payload.sub;
+        const { data: { user }, error } = await db_1.supabase.auth.getUser(token);
+        if (error || !user)
+            throw error;
+        req.userId = user.id;
+        req.user = user;
         next();
     }
-    catch {
+    catch (error) {
         res.status(401).json({ message: "Invalid or expired token" });
     }
 }

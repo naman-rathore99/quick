@@ -28,7 +28,7 @@ export function resolveCartLines(
       ...line,
       name: svc.name,
       unitPrice: svc.price,
-      lineTotal: svc.price * line.quantity,
+      lineTotal: svc.price === null ? null : svc.price * line.quantity,
     });
   }
   return out;
@@ -48,7 +48,7 @@ export function computeCartTotals(
     if (!svc) continue;
     lineCount += 1;
     itemCount += line.quantity;
-    subtotal += svc.price * line.quantity;
+    subtotal += (svc.price ?? 0) * line.quantity;
   }
 
   return { subtotal, itemCount, lineCount };

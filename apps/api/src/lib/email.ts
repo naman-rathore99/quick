@@ -1,8 +1,12 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
-
 export async function sendPasswordResetEmail(to: string, resetUrl: string) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn("RESEND_API_KEY is not set. Email not sent.");
+    return;
+  }
+  const resend = new Resend(apiKey);
   await resend.emails.send({
     from: "QuickDidi <no-reply@quickdidi.com>",
     to,

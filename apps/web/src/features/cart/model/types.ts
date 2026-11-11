@@ -5,6 +5,6 @@ export type CartLine = {
 
 export type EnrichedCartLine = CartLine & {
   name: string;
-  unitPrice: number;
-  lineTotal: number;
+  unitPrice: number | null;
+  lineTotal: number | null;
 };

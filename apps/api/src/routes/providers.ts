@@ -1,48 +1,37 @@
 import { Router, Response } from "express";
 import { supabase } from "../lib/db";
 import { requireAuth, AuthRequest } from "../middleware/requireAuth";
+import { apiRateLimit } from "../middleware/authRateLimit";
 
 const router = Router();
+const providerRateLimit = apiRateLimit(60);  // 60 requests/minute per IP
 
 // ─── Provider Onboarding ───────────────────────────────────────────────────
-router.post("/onboard", requireAuth, async (req: AuthRequest, res: Response) => {
-  const { location, bio, services } = req.body;
-  
-  if (!location || !services || !Array.isArray(services) || services.length === 0) { 
-    res.status(400).json({ message: "Location and at least one service are required" }); 
-    return; 
-  }
-
-  // 1. Update user role to 'provider' and set location
-  const { error: userError } = await supabase
-    .from("users")
-    .update({ 
-      role: "provider",
-      location: location
-    })
-    .eq("id", req.userId);
-
-  if (userError) {
-    res.status(500).json({ message: "Failed to update user profile", error: userError.message });
+router.post("/onboard", requireAuth, providerRateLimit, async (req: AuthRequest, res: Response) => {
+  const { location, bio, services, phone } = req.body ?? {};
+  if (typeof location !== "string" || !location.trim() || location.length > 200 ||
+    typeof bio !== "string" || !bio.trim() || bio.length > 2000 ||
+    typeof phone !== "string" || !/^\+?[0-9]{7,15}$/.test(phone.trim()) ||
+    !Array.isArray(services) || services.length === 0 || services.length > 20 ||
+    services.some((service) => typeof service?.service_id !== "string" ||
+      !Number.isFinite(service.custom_price) || service.custom_price <= 0) ||
+    new Set(services.map((service) => service.service_id)).size !== services.length) {
+    res.status(400).json({ message: "Enter an area, a valid phone number, a bio and a price for each distinct service." });
     return;
   }
 
-  // 2. Prepare provider services records
-  const providerServices = services.map((s: any) => ({
-    provider_id: req.userId,
-    service_id: s.service_id || null, 
-    bundle_name: s.bundle_name || null,
-    custom_price: s.custom_price,
-    bio: bio || ""
-  }));
-
-  // 3. Insert provider services
-  const { error: servicesError } = await supabase
-    .from("provider_services")
-    .insert(providerServices);
-
-  if (servicesError) {
-    res.status(500).json({ message: "Failed to save provider services", error: servicesError.message });
+  const { error } = await supabase.rpc("save_provider_application", {
+    account_id: req.userId,
+    area: location.trim(),
+    profile_bio: bio.trim(),
+    offers: services,
+    contact_phone: phone.trim(),
+  });
+  if (error) {
+    const invalidProfile = error.code === "P0002";
+    res.status(invalidProfile ? 409 : 503).json({
+      message: invalidProfile ? "Your account profile is missing. Contact support before applying." : "Could not save your profile. Please try again.",
+    });
     return;
   }
 
@@ -50,13 +39,21 @@ router.post("/onboard", requireAuth, async (req: AuthRequest, res: Response) => 
 });
 
 // ─── Get Providers for a Service ───────────────────────────────────────────
-router.get("/", async (req: AuthRequest, res: Response) => {
+router.get("/", providerRateLimit, async (req: AuthRequest, res: Response) => {
   const { service_id } = req.query;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  // Validate service_id format if provided
+  if (service_id && (typeof service_id !== "string" || !uuidRegex.test(service_id))) {
+    res.status(400).json({ message: "Invalid service filter." });
+    return;
+  }
 
   let query = supabase
     .from("provider_services")
     .select(`
       id,
+      service_id,
       custom_price,
       bundle_name,
       bio,
@@ -70,7 +67,7 @@ router.get("/", async (req: AuthRequest, res: Response) => {
   const { data, error } = await query;
 
   if (error) {
-    res.status(500).json({ message: "Failed to fetch providers", error: error.message });
+    res.status(503).json({ message: "Failed to fetch providers" });
     return;
   }
 

@@ -38,10 +38,10 @@ export function CartSheet() {
           variant="outline"
           size="sm"
           className="relative h-10 gap-2 px-3"
-          aria-label={`Bookings, ${totals.itemCount} items`}
+          aria-label={`Cart, ${totals.itemCount} items`}
         >
           <ClipboardList className="h-5 w-5" />
-          <span className="hidden sm:inline">Bookings</span>
+          <span className="hidden sm:inline">Cart</span>
 
           {totals.itemCount > 0 && (
             <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">
@@ -59,7 +59,7 @@ export function CartSheet() {
         {/* Header */}
         <SheetHeader className="border-b border-border pb-4">
           <SheetTitle className="text-lg font-semibold tracking-tight">
-            Your Bookings
+            Your cart
           </SheetTitle>
         </SheetHeader>
 
@@ -85,10 +85,7 @@ export function CartSheet() {
         {/* Footer */}
         <div className="space-y-3 border-t border-border pt-4">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span className="font-semibold tabular-nums text-foreground">
-              ₹{totals.subtotal}
-            </span>
+            <span>Request one service at a time. Prices are shown when you choose a provider.</span>
           </div>
 
           <Button

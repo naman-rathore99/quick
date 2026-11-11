@@ -7,7 +7,7 @@ export type CatalogServiceIcon =
 export type CatalogService = {
   id: string;
   name: string;
-  price: number;
+  price: number | null;
   icon: CatalogServiceIcon;
 };
 

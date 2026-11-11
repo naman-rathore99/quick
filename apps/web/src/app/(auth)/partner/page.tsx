@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 export default function PartnerLandingPage() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-12">
+    <main className="qd-flow flex flex-col items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-2xl text-center">
         <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mb-6">
           Become a QuickDidi Partner

@@ -61,7 +61,7 @@ export function CtaSection() {
           {/* Heading */}
           <h2
             id="cta-heading"
-            className="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl text-white leading-[1.15]"
+            className="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl leading-[1.15]"
           >
             {ctaCopy.title}
           </h2>
@@ -73,27 +73,14 @@ export function CtaSection() {
 
           {/* Action Buttons */}
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5">
-            <Button
-              asChild
-              size="lg"
-              className="w-full sm:w-auto min-w-[13rem] h-12 sm:h-13 px-8 text-base font-semibold bg-white text-neutral-900 hover:bg-neutral-100 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-xl shadow-black/10 group"
-            >
-              <Link href="/services" className="inline-flex items-center justify-center gap-2">
+            <Link href="/#services" className="inline-flex items-center justify-center gap-2 rounded-full w-full sm:w-auto min-w-[13rem] h-12 sm:h-13 px-8 text-base font-semibold bg-white text-neutral-900 hover:bg-neutral-100 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-xl shadow-black/10 group">
                 <span>{ctaCopy.buttonLabel}</span>
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
               </Link>
-            </Button>
 
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className="w-full sm:w-auto min-w-[13rem] h-12 sm:h-13 px-8 text-base font-semibold border-2 border-white text-white bg-transparent hover:bg-white/15 hover:text-white hover:border-white hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-md backdrop-blur-sm"
-            >
-              <Link href="/partner" className="inline-flex items-center justify-center">
+            <Link href="/partner" className="inline-flex items-center justify-center rounded-full w-full sm:w-auto min-w-[13rem] h-12 sm:h-13 px-8 text-base font-semibold border-2 border-white text-white bg-transparent hover:bg-white/15 hover:text-white hover:border-white hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-md backdrop-blur-sm">
                 Become a Partner
               </Link>
-            </Button>
           </div>
 
           {/* Trust Indicators */}

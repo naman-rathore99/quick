@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -10,7 +10,20 @@ import { authApi } from "@/lib/auth-api";
 function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token") || "";
+  const token = searchParams.get("token_hash") || searchParams.get("token") || "";
+  const [linkChecked, setLinkChecked] = useState(false);
+  const [recovery, setRecovery] = useState<{ token: string; refreshToken: string } | null>(null);
+
+  useEffect(() => {
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    const accessToken = fragment.get("access_token");
+    const refreshToken = fragment.get("refresh_token");
+    if (fragment.get("type") === "recovery" && accessToken && refreshToken) {
+      setRecovery({ token: accessToken, refreshToken });
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+    setLinkChecked(true);
+  }, []);
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -29,13 +42,13 @@ function ResetPasswordContent() {
       setError("Passwords don't match");
       return;
     }
-    if (!token) {
+    if (!token && !recovery) {
       setError("Invalid or missing reset token");
       return;
     }
     setLoading(true);
     try {
-      await authApi.resetPassword(token, password);
+      await authApi.resetPassword(recovery?.token || token, password, recovery?.refreshToken);
       setDone(true);
       setTimeout(() => router.push("/login"), 2500);
     } catch (err: unknown) {
@@ -45,8 +58,12 @@ function ResetPasswordContent() {
     }
   }
 
+  if (linkChecked && !token && !recovery && !done) {
+    return <main className="qd-flow mx-auto max-w-lg px-6"><h1>Recovery link unavailable</h1><Link className="mt-4 inline-block underline" href="/forgot-password">Request a new reset link</Link></main>;
+  }
+
   return (
-    <main className="min-h-screen flex items-center justify-center bg-background px-4">
+    <main className="qd-flow flex items-center justify-center bg-background px-4">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}

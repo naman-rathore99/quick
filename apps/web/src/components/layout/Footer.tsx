@@ -14,7 +14,7 @@ const social = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-border/60 bg-muted/30 backdrop-blur-sm">
+    <footer className="qd-footer border-t border-border/60 bg-muted/30">
       <div className={`${layoutContainer} py-12 md:py-16`}>
 
         {/* Top Section */}
@@ -24,12 +24,12 @@ export function Footer() {
           <div className="max-w-xs">
             <Link
               href="/"
-              className="text-xl font-semibold tracking-tight text-foreground"
+              className="qd-footer-brand text-foreground"
             >
               QuickDidi
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Trusted home services — cleaning, cooking, and daily help on your schedule.
+              A little more room for the good parts of your day.
             </p>
           </div>
 

@@ -23,7 +23,7 @@ export function CartLineRow({
     <div className="flex items-start gap-3 rounded-2xl border border-border/80 bg-muted/30 p-4">
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold leading-snug text-foreground">{line.name}</p>
-        <p className="mt-1 text-xs text-muted-foreground">₹{line.unitPrice} each</p>
+        <p className="mt-1 text-xs text-muted-foreground">Price shown at checkout</p>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-2">
         <div className="flex items-center gap-0.5 rounded-xl border border-border bg-background p-0.5 shadow-sm">
@@ -52,9 +52,6 @@ export function CartLineRow({
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold tabular-nums text-foreground">
-            ₹{line.lineTotal}
-          </span>
           <Button
             type="button"
             variant="ghost"
